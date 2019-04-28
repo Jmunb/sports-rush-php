@@ -1,7 +1,10 @@
 <?php
+
 namespace backend\controllers;
 
 use common\models\User;
+use console\controllers\ImportController;
+use import\Instagram;
 use Yii;
 use yii\web\Controller;
 use yii\filters\VerbFilter;
@@ -23,11 +26,11 @@ class SiteController extends Controller
                 'class' => AccessControl::className(),
                 'rules' => [
                     [
-                        'actions' => ['login', 'error'],
+                        'actions' => ['login', 'error', 'download'],
                         'allow' => true,
                     ],
                     [
-                        'actions' => ['logout', 'index'],
+                        'actions' => ['logout', 'index', 'download'],
                         'allow' => true,
                         'roles' => ['@'],
                     ],
@@ -97,5 +100,13 @@ class SiteController extends Controller
         Yii::$app->user->logout();
 
         return $this->goHome();
+    }
+
+    public function actionDownload()
+    {
+        $instagram = new Instagram();
+        $instagram->load();
+
+        $this->redirect(['admin/index']);
     }
 }
