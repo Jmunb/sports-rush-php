@@ -17,6 +17,7 @@ class Instagram
             $instagram = Inst::withCredentials('rybartem@yandex.ru', '1qaz2wsx');
         } catch (\Exception $e) {
             echo 'Inst not init';
+            var_dump($e);
             return 0;
         }
 
@@ -38,13 +39,12 @@ class Instagram
             }
             foreach ($result as $item) {
 
-                if ($item->getType() != 'sidecar') {
-                    continue;
-                }
+//                if ($item->getType() != 'sidecar') {
+//                    continue;
+//                }
 
                 /** @var $item \InstagramScraper\Model\Media */
-
-                if (in_array($item->getType(), ['image', 'sidecar'])) {
+                if (in_array($item->getType(), ['image', 'sidecar', 'video'])) {
 
 
                     $count = Post::find()->where(['external_id' => $item->getId(), 'from' => 'instagram'])->count();
@@ -53,9 +53,17 @@ class Instagram
                         $post = new Post();
                         $post->external_id = $item->getId();
 
-                        if ($item->getType() == 'video')
-                            $post->url = $item->getVideoStandardResolutionUrl();
-                        else  $post->url = $item->getImageHighResolutionUrl();
+                        if ($item->getType() == 'video') {
+                            $post->url = $item->getImageHighResolutionUrl();
+
+                            if (!$post->url) {
+                                $post->url = $item->getImageThumbnailUrl();
+                            }
+
+                            if (!$post->url) {
+                                $post->url = $item->getImageLowResolutionUrl();
+                            }
+                        } else  $post->url = $item->getImageHighResolutionUrl();
 
                         $text = $item->getCaption();
 
@@ -109,7 +117,6 @@ class Instagram
 
 
                     if ($item->getType() == 'sidecar') {
-                        var_dump('https://www.instagram.com/p/' . $item->getShortCode());
 
                         $media = $instagram->getMediaByUrl('https://www.instagram.com/p/' . $item->getShortCode());
 
@@ -121,8 +128,17 @@ class Instagram
                             if ($k == 0) continue;
 
                             if ($sidecarMedia->getType() == 'video') {
-                                $post->url = $sidecarMedia->getVideoStandardResolutionUrl();
-                                continue;
+//                                $post->url = $sidecarMedia->getVideoStandardResolutionUrl();
+                                $post->url = $sidecarMedia->getImageHighResolutionUrl();
+
+                                if (!$post->url) {
+                                    $post->url = $sidecarMedia->getImageThumbnailUrl();
+                                }
+
+                                if (!$post->url) {
+                                    $post->url = $sidecarMedia->getImageLowResolutionUrl();
+                                }
+
                             } else {
                                 $post->url = $sidecarMedia->getImageHighResolutionUrl();
                             }
@@ -133,11 +149,12 @@ class Instagram
                                 $im->post_id = $post->id;
 
                                 $im->width = $post->width;
+                                $im->active = 0;
                                 $im->height = $post->height;
                                 $im->url = $post->url;
                                 $im->created_time = $post->created_time;
                                 $im->link = $post->link;
-                                $im->format = $post->format;
+                                $im->format = $sidecarMedia->getType();
                                 $im->count_slice = $k;
                                 $im->from = $post->from;
                                 $im->created_at = time();

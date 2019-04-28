@@ -33,6 +33,7 @@ class ApiController extends Controller
             ->with('images')
             ->offset($page * $perPage)
             ->limit($perPage)
+            ->where(['status' => 1])
             ->all();
 
         foreach ($posts as $post) {

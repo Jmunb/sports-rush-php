@@ -75,7 +75,8 @@ class Image extends \yii\db\ActiveRecord
     {
         return [
             'url',
-            'active'
+            'active',
+            'format'
         ];
     }
 }
